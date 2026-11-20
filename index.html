@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ducky Support - MulticraftX</title>
+<style>
+  body { margin:0; background:#fff9c4; font-family:Arial; color:#222; text-align:center; padding-bottom:20px; }
+  #header { background:#ffcc00; padding:18px; font-size:28px; font-weight:bold; }
+  #sub { color:#555; font-size:14px; padding:8px; }
+  #duckBig { font-size:100px; animation: wackel 1s infinite; display:block; }
+  @keyframes wackel { 0%{transform:rotate(-3deg)} 50%{transform:rotate(3deg)} 100%{transform:rotate(-3deg)} }
+  #chat { width:92%; max-width:560px; margin:10px auto; background:white; border:3px solid #ffcc00; border-radius:15px; padding:10px; height:280px; overflow-y:auto; text-align:left; }
+  .msg-user { background:#ffcc00; padding:8px 10px; border-radius:12px; margin:6px 0; text-align:right; font-weight:bold; }
+  .msg-duck { background:#fff3b0; border:1px solid #ffcc00; padding:8px 10px; border-radius:12px; margin:6px 0; }
+  .msg-admin { background:#222; color:white; padding:8px 10px; border-radius:12px; margin:6px 0; border-left:6px solid red; }
+  .box { width:92%; max-width:560px; margin:10px auto; background:white; border:3px solid #ffcc00; border-radius:15px; padding:12px; text-align:left; }
+  button { padding:10px 11px; margin:4px; font-size:14px; border-radius:12px; border:none; background:#ffcc00; cursor:pointer; font-weight:bold; }
+  button.primary { background:#ff8800; color:white; font-size:17px; }
+  button.blue { background:#aee7ff; } button.green { background:#b6ffb6; } button.pink { background:#ffb6e6; } button.red { background:#ffb0b0; } button.purple { background:#e0b0ff; }
+  button.adminBtn { background:#222; color:white; }
+  input { width:68%; padding:11px; font-size:15px; border-radius:12px; border:2px solid #ffcc00; margin:4px; }
+  h3 { margin:8px 0; font-size:18px; }
+  #tiny { position:fixed; top:2px; left:4px; font-size:6px; color:#d9d9d9; margin:0; z-index:999; }
+  #adminPanel { display:none; width:92%; max-width:560px; margin:10px auto; background:#222; color:white; border-radius:15px; padding:15px; text-align:left; }
+  #adminMsgs { background:white; color:#222; border-radius:10px; padding:10px; max-height:220px; overflow-y:auto; margin-top:10px; }
+  .adminMsg { background:#fff3b0; padding:8px; border-radius:8px; margin:5px 0; border-left:5px solid red; }
+  #notif { display:none; background:red; color:white; padding:8px; border-radius:10px; font-weight:bold; margin:10px auto; width:92%; max-width:560px; }
+  #loginBox, #accountBox { display:none; width:92%; max-width:560px; margin:10px auto; background:white; border:3px solid #222; border-radius:15px; padding:15px; }
+  #userInfo { background:#222; color:white; padding:10px; border-radius:10px; width:92%; max-width:560px; margin:10px auto; display:none; }
+  #locked { background:white; border:3px solid red; border-radius:15px; width:92%; max-width:560px; margin:15px auto; padding:20px; }
+</style>
+</head>
+<body>
+<div id="tiny">help strike and run</div>
+
+<div id="header">🦆 DUCKY SUPPORT 🦆</div>
+<div id="sub">Nur für MulticraftX! Quak! Währung: Coins!</div>
+
+<div id="userInfo">
+  Eingeloggt als: <b id="showName">?</b> 🪙 Coins: <b id="showCoinsTop">500</b> | <button onclick="logoutUser()" style="background:white;color:#222;">Abmelden</button>
+</div>
+
+<button onclick="showAccount()">👤 Account machen / Anmelden</button>
+<button class="adminBtn" onclick="showLogin()">🔐 Admin Anmelden</button>
+
+<div id="notif">🔔 NEUE HILFE-ANFRAGE FÜR ADMIN!</div>
+
+<!-- ACCOUNT MACHEN -->
+<div id="accountBox">
+  <h3>👤 Account machen / Anmelden</h3>
+  <p>Du brauchst einen Account, um Hilfe zu fragen! Dein Account wird gespeichert!</p>
+  <input id="regName" placeholder="Dein Name in MulticraftX... z.B. Steve123"><br>
+  <input id="regPass" type="password" placeholder="Passwort wählen..."><br>
+  <button class="primary" onclick="register()">✅ Account erstellen</button>
+  <button onclick="loginUser()">🔑 Anmelden (wenn du schon einen hast)</button>
+  <p id="accountMsg" style="color:red;"></p>
+  <p style="font-size:12px; color:#777;">Dein Account wird sicher auf dem Ducky-Support-Server gespeichert.</p>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div id="loginBox">
+  <h3>🔐 Admin Anmeldung</h3>
+  <input id="adminCode" type="password" placeholder="Admin-Code eingeben...">
+  <br><br>
+  <button class="adminBtn" onclick="loginAdmin()">Anmelden</button>
+  <button onclick="hideLogin()">Abbrechen</button>
+  <p id="loginError" style="color:red;"></p>
+</div>
+
+<!-- ADMIN BEREICH -->
+<div id="adminPanel">
+  <h3>👑 ADMIN BEREICH</h3>
+  <p>Angemeldet als: <b>ADMIN</b> | <button onclick="logoutAdmin()" style="background:white;color:#222;">Abmelden</button> | <button onclick="showAllAccounts()" style="background:#ffcc00;color:#222;">👥 Alle Accounts sehen</button></p>
+  <div id="allAccounts" style="background:#333; padding:10px; border-radius:10px; display:none;"></div>
+  <p>Alle Hilfe-Anfragen (mit Name!):</p>
+  <div id="adminMsgs"><p>Noch keine Anfragen...</p></div>
+  <div style="background:#333; padding:10px; border-radius:10px; margin-top:10px;">
+    <h3 style="color:white;">✍️ Als Admin zurückschreiben:</h3>
+    <input id="replyUser" placeholder="MulticraftX-Spielername..."><br>
+    <input id="adminReplyInput" placeholder="Schreibe dem Spieler...">
+    <button onclick="adminReply()" style="background:#ffcc00;color:#222;">📨 Als Admin senden</button><br>
+    <button onclick="adminQuick('Ich komme sofort zu dir! Bleib wo du bist!')" style="background:#00cc66;color:white;">✅ Ich komme!</button>
+    <button onclick="adminQuick('Was genau brauchst du? Erklär mal!')" style="background:#0099ff;color:white;">❓ Was brauchst du?</button>
+    <button onclick="adminQuick('Ich teleportiere mich zu dir!')" style="background:#aa00ff;color:white;">✨ Teleport!</button>
+  </div>
+  <br>
+  <button onclick="clearAdminMsgs()" style="background:red;color:white;">Alle Nachrichten löschen</button>
+</div>
+
+<!-- GESPERRT WENN KEIN ACCOUNT -->
+<div id="locked">
+  <h2>🔒 Bitte zuerst Account machen!</h2>
+  <p>Du musst einen Account machen, um Hilfe zu fragen!</p>
+  <p>🦆 Quak! Mach oben auf <b>„Account machen“</b> klicken!</p>
+  <button class="primary" onclick="showAccount()">👤 Jetzt Account machen!</button>
+</div>
+
+<div id="mainContent" style="display:none;">
+<span id="duckBig">🦆</span>
+<p><b>Hallo <span id="helloName">Freund</span>! Ich bin Ducky!</b><br>Ich helfe dir bei ALLEM in MulticraftX! Quak!</p>
+
+<button onclick="showHelpRequest()">🆘 Ich brauche Hilfe vom Admin!</button>
+
+<div id="chat">
+  <div class="msg-duck">🦆 Quak! Hallo! Du bist angemeldet! Jetzt kannst du Hilfe fragen! Was brauchst du?</div>
+</div>
+
+<div class="box">
+  <h3>👹 BOSSE</h3>
+  <button class="red" onclick="ask('Hilf mir den Ender Dragon zu besiegen')">🐉 Ender Dragon</button>
+  <button class="red" onclick="ask('Hilf mir den Wither zu besiegen')">💀 Wither Boss</button>
+  <button class="red" onclick="ask('Hilf mir den Warden zu besiegen')">👹 Warden Boss</button>
+  <button class="red" onclick="ask('Hilf mir einen Boss zu besiegen')">👹 Boss</button>
+</div>
+
+<div class="box">
+  <h3>⚙️ CREATE MOD</h3>
+  <button class="purple" onclick="ask('Hilf mir mit der Create Mod')">⚙️ Create Hilfe</button>
+  <button class="purple" onclick="ask('Hilf mir ein Wasserrad zu bauen Create Mod')">💧 Wasserrad</button>
+  <button class="purple" onclick="ask('Hilf mir eine Windmühle zu bauen Create Mod')">🌬️ Windmühle</button>
+  <button class="purple" onclick="ask('Hilf mir Zahnräder zu machen Create Mod')">⚙️ Zahnräder</button>
+  <button class="purple" onclick="ask('Hilf mir einen Zug zu bauen Create Mod')">🚂 Zug</button>
+  <button class="purple" onclick="ask('Hilf mir eine automatische Farm mit Create zu bauen')">🌾 Auto-Farm</button>
+</div>
+
+<div class="box">
+  <h3>❤️ HEILEN</h3>
+  <button class="pink" onclick="ask('Hilf mir mich zu heilen')">❤️ Heilen</button>
+  <button class="pink" onclick="ask('Ich habe Hunger hilf mir')">🍖 Hunger</button>
+  <button class="pink" onclick="ask('Ich bin vergiftet hilf mir')">🤢 Vergiftet!</button>
+  <button class="pink" onclick="ask('Ich brenne hilf mir')">🔥 Ich brenne!</button>
+  <button class="pink" onclick="ask('Hilf mir Tränke zu machen')">🧪 Tränke</button>
+</div>
+
+<div class="box">
+  <h3>🚕 TAXI - 15 Coins</h3>
+  <button onclick="ask('Ich brauche ein Taxi in MulticraftX')">🚕 Taxi rufen!</button>
+  <button onclick="ask('Taxi zu meinem Haus in MulticraftX')">🏠 Taxi Haus</button>
+  <button onclick="ask('Taxi zu McDonalds in MulticraftX')">🍔 Taxi McDonald's</button>
+  <button onclick="ask('Taxi zur Mine in MulticraftX')">⛏️ Taxi Mine</button>
+  <button onclick="ask('Taxi zum Spawn in MulticraftX')">🌍 Taxi Spawn</button>
+</div>
+
+<div class="box">
+  <h3>🏠 Bauen & McDonald's</h3>
+  <button onclick="ask('Kannst du mir in MulticraftX ein Haus bauen?')">🏠 Haus bauen</button>
+  <button onclick="ask('Hilf mir eine Burg zu bauen')">🏰 Burg</button>
+  <button onclick="addToCart('Big Mac', 55)">🍔 Big Mac - 55 Coins</button>
+  <button onclick="addToCart('McNuggets 6 Stück', 45)">🍗 McNuggets - 45 Coins</button>
+  <button onclick="addToCart('Pommes groß', 35)">🍟 Pommes - 35 Coins</button>
+  <button onclick="addToCart('Cola', 20)">🥤 Cola - 20 Coins</button>
+  <p><b>Gesamt: <span id="total">0</span> Coins | Deine Coins: <span id="myCoins">500</span> Coins</b></p>
+  <button class="primary" onclick="order()">✅ BESTELLEN!</button>
+  <button onclick="clearCart()">🗑️ Leeren</button>
+  <div id="cartItems">Noch leer... Quak!</div>
+</div>
+
+<p><input id="input" placeholder="Frag Ducky..."><button class="primary" onclick="sendMsg()">Senden ➡️</button></p>
+</div>
+
+<script>
+// Nach dem Anlegen des Cloudflare Workers hier die Worker-Adresse eintragen.
+const API_BASE = "https://DEIN-WORKER.DEIN-ACCOUNT.workers.dev";
+const TOKEN_KEY = "ducky_session_token";
+let token = localStorage.getItem(TOKEN_KEY) || "";
+let chat = document.getElementById('chat');
+let cart = []; let total = 0;
+let isAdmin = false;
+let currentUser = null;
+let myCoins = 500;
+const seenMessageIds = new Set();
+let pollHandle = null;
+
+async function api(path, options={}) {
+  if (!API_BASE.startsWith('https://') || API_BASE.includes('DEIN-WORKER')) throw new Error('Bitte zuerst API_BASE in index.html mit deiner Cloudflare-Worker-Adresse ersetzen.');
+  const headers = { 'Content-Type':'application/json', ...(options.headers || {}) };
+  if (token) headers.Authorization = 'Bearer ' + token;
+  const response = await fetch(API_BASE + path, { ...options, headers });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Serverfehler (' + response.status + ')');
+  return data;
+}
+function showError(id, message) { const el=document.getElementById(id); if(el) el.innerText=message; }
+function showAccount(){ document.getElementById('accountBox').style.display='block'; }
+function saveToken(value){ token=value; if(value) localStorage.setItem(TOKEN_KEY,value); else localStorage.removeItem(TOKEN_KEY); }
+function setCoins(value){ myCoins=Number(value)||0; const a=document.getElementById('showCoinsTop'); const b=document.getElementById('myCoins'); if(a)a.innerText=myCoins; if(b)b.innerText=myCoins; }
+async function register(){
+  const name=document.getElementById('regName').value.trim();
+  const password=document.getElementById('regPass').value;
+  if(!name || !password){showError('accountMsg','Bitte Name und Passwort eingeben!');return;}
+  try { const data=await api('/api/register',{method:'POST',body:JSON.stringify({name,password})}); saveToken(data.token); currentUser=data.user; setCoins(data.user.coins); document.getElementById('accountBox').style.display='none'; afterLogin(); alert('Account erstellt! Willkommen, '+currentUser.name+'!'); }
+  catch(e){showError('accountMsg',e.message);}
+}
+async function loginUser(){
+  const name=document.getElementById('regName').value.trim(); const password=document.getElementById('regPass').value;
+  if(!name || !password){showError('accountMsg','Bitte Name und Passwort eingeben!');return;}
+  try { const data=await api('/api/login',{method:'POST',body:JSON.stringify({name,password})}); saveToken(data.token); currentUser=data.user; setCoins(data.user.coins); document.getElementById('accountBox').style.display='none'; afterLogin(); }
+  catch(e){showError('accountMsg',e.message);}
+}
+async function restoreSession(){
+  if(!token){document.getElementById('locked').style.display='block';return;}
+  try { const data=await api('/api/me'); currentUser=data.user; isAdmin=data.user.role==='admin'; if(isAdmin){document.getElementById('adminPanel').style.display='block';updateAdminPanel();if(pollHandle)clearInterval(pollHandle);pollHandle=setInterval(updateAdminPanel,5000);} else {setCoins(data.user.coins);afterLogin();} }
+  catch(e){saveToken('');document.getElementById('locked').style.display='block';}
+}
+function logoutUser(){ if(token) api('/api/logout',{method:'POST'}).catch(()=>{}); saveToken(''); currentUser=null; isAdmin=false; if(pollHandle)clearInterval(pollHandle); document.getElementById('userInfo').style.display='none'; document.getElementById('mainContent').style.display='none'; document.getElementById('adminPanel').style.display='none'; document.getElementById('locked').style.display='block'; }
+function afterLogin(){
+  if(!currentUser)return;
+  document.getElementById('userInfo').style.display='block';
+  document.getElementById('showName').innerText=currentUser.name;
+  document.getElementById('helloName').innerText=currentUser.name;
+  document.getElementById('mainContent').style.display='block';
+  document.getElementById('locked').style.display='none';
+  document.getElementById('accountBox').style.display='none';
+  setCoins(currentUser.coins);
+  loadUserMessages();
+  if(pollHandle)clearInterval(pollHandle);
+  pollHandle=setInterval(loadUserMessages,5000);
+}
+function showLogin(){document.getElementById('loginBox').style.display='block';}
+function hideLogin(){document.getElementById('loginBox').style.display='none';}
+async function loginAdmin(){
+  const password=document.getElementById('adminCode').value;
+  try { const data=await api('/api/admin/login',{method:'POST',body:JSON.stringify({password})}); saveToken(data.token); currentUser={name:'ADMIN',role:'admin'}; isAdmin=true; document.getElementById('loginBox').style.display='none'; document.getElementById('adminPanel').style.display='block'; document.getElementById('loginError').innerText=''; document.getElementById('adminCode').value=''; updateAdminPanel(); if(pollHandle)clearInterval(pollHandle); pollHandle=setInterval(updateAdminPanel,5000); }
+  catch(e){showError('loginError',e.message);}
+}
+function logoutAdmin(){logoutUser();}
+async function showAllAccounts(){
+  const el=document.getElementById('allAccounts');
+  if(el.style.display==='block'){el.style.display='none';return;}
+  el.style.display='block';el.innerText='Lade Accounts...';
+  try{const data=await api('/api/admin/users');el.innerHTML='<b>Alle Accounts ('+data.users.length+'):</b><br>'+data.users.map(u=>'👤 '+escapeHtml(u.name)+' | Coins: '+u.coins+' | Erstellt: '+escapeHtml(u.created_at||'?')).join('<br>');}
+  catch(e){el.innerText=e.message;}
+}
+function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function addMsgToChat(text,who){if(!chat)return;const div=document.createElement('div');div.className=who==='user'?'msg-user':who==='admin'?'msg-admin':'msg-duck';div.innerText=text;chat.appendChild(div);chat.scrollTop=chat.scrollHeight;}
+function renderServerMessage(m){if(seenMessageIds.has(m.id))return;seenMessageIds.add(m.id);const who=m.sender_role==='admin'?'admin':(m.sender_role==='user'?'user':'duck');const prefix=m.sender_role==='admin'?'👑 ADMIN: ':m.sender_role==='user'?'🧑 '+(m.sender_name||currentUser?.name||'Spieler')+': ':'';addMsgToChat(prefix+m.text,who);}
+async function loadUserMessages(){if(!currentUser||isAdmin)return;try{const data=await api('/api/messages');data.messages.forEach(renderServerMessage);if(data.user)setCoins(data.user.coins);}catch(e){console.warn(e.message);}}
+async function sendToAdmin(text){if(!currentUser)throw new Error('Bitte zuerst anmelden.');const data=await api('/api/messages',{method:'POST',body:JSON.stringify({text})});renderServerMessage(data.message);}
+async function updateAdminPanel(){
+  if(!isAdmin)return;
+  try{const data=await api('/api/admin/messages');const el=document.getElementById('adminMsgs');el.innerHTML='';
+    if(!data.messages.length){el.innerHTML='<p>Noch keine Anfragen...</p>';return;}
+    data.messages.forEach(m=>{const div=document.createElement('div');div.className='adminMsg';const strong=document.createElement('b');strong.innerText='👤 '+m.user_name+' · '+new Date(m.created_at).toLocaleString('de-DE');const p=document.createElement('p');p.innerText=m.text;div.append(strong,p);const btn=document.createElement('button');btn.innerText='An Spieler antworten';btn.onclick=()=>{document.getElementById('replyUser').value=m.user_name;document.getElementById('adminReplyInput').focus();};div.append(btn);el.append(div);});
+  }catch(e){document.getElementById('adminMsgs').innerText=e.message;}
+}
+async function adminReply(){const userName=document.getElementById('replyUser').value.trim();const text=document.getElementById('adminReplyInput').value.trim();if(!userName||!text){alert('Bitte Spielernamen und Nachricht eingeben!');return;}try{await api('/api/admin/reply',{method:'POST',body:JSON.stringify({userName,text})});document.getElementById('adminReplyInput').value='';await updateAdminPanel();alert('Antwort wurde an '+userName+' gesendet.');}catch(e){alert(e.message);}}
+function adminQuick(text){document.getElementById('adminReplyInput').value=text;adminReply();}
+function clearAdminMsgs(){alert('Anfragen werden im neuen System nicht lokal gelöscht. Bitte lösche sie später über die Admin-Verwaltung.');}
+function showHelpRequest(){if(!currentUser){alert('Bitte erst anmelden!');showAccount();return;}const grund=prompt('Was brauchst du? Schreib deine Hilfe-Anfrage für den Admin:');if(grund)ask(grund);}
+function addToCart(name,price){if(!currentUser){alert('Bitte erst anmelden!');showAccount();return;}cart.push({name,price});total+=price;updateCart();addMsgToChat('🦆 Dazu genommen: '+name+' - '+price+' Coins! Quak!','duck');}
+function updateCart(){const el=document.getElementById('cartItems');if(!el)return;if(!cart.length)el.innerText='Noch leer... Quak!';else el.innerHTML=cart.map(c=>'• '+escapeHtml(c.name)+' - '+c.price+' Coins').join('<br>');document.getElementById('total').innerText=total;document.getElementById('myCoins').innerText=myCoins;const top=document.getElementById('showCoinsTop');if(top)top.innerText=myCoins;}
+function clearCart(){cart=[];total=0;updateCart();addMsgToChat('🦆 Warenkorb geleert! Quak!','duck');}
+async function order(){if(!cart.length){addMsgToChat('🦆 Quak! Warenkorb leer!','duck');return;}try{const data=await api('/api/order',{method:'POST',body:JSON.stringify({items:cart})});setCoins(data.coins);addMsgToChat('🦆 QUAK! Bestellung erfolgreich! '+data.charged+' Coins! Rest: '+myCoins+' Coins!','duck');cart=[];total=0;updateCart();}catch(e){addMsgToChat('🦆 '+e.message,'duck');}}
+function duckAnswer(frage){
+  let f=frage.toLowerCase();
+  if(f.includes('ender dragon'))return '🦆 Ender Dragon! 🐉 Kristalle zerstören, dann Bogen + Schwert!';
+  if(f.includes('wither'))return '🦆 Wither! 💀 Unter der Erde! Netherite + Milch!';
+  if(f.includes('warden'))return '🦆 Warden! 👹 Nicht kämpfen! Schleichen und Abstand halten!';
+  if(f.includes('boss'))return '🦆 Boss! 👹 Der Admin bekommt deine Anfrage, '+currentUser.name+'!';
+  if(f.includes('create')&&f.includes('wasserrad'))return '🦆 Wasserrad Create! 💧 Holz + Wasser + Zahnrad!';
+  if(f.includes('create')&&f.includes('windmühle'))return '🦆 Windmühle Create! 🌬️ Hoch + Segel + Zahnrad!';
+  if(f.includes('create')&&f.includes('zahnrad'))return '🦆 Zahnräder Create! ⚙️ Aus Holz/Eisen!';
+  if(f.includes('create')&&f.includes('zug'))return '🦆 Zug Create! 🚂 Gleise + Zug + Energie!';
+  if(f.includes('create')&&f.includes('farm'))return '🦆 Auto-Farm Create! 🌾 Ernter + Fließband + Truhe!';
+  if(f.includes('create'))return '🦆 Create Mod! ⚙️ Wasserrad, Windmühle, Zahnräder, Zug, Farm!';
+  if(f.includes('heilen'))return '🦆 Ich helfe dir! ❤️ Iss etwas oder nutze einen Heiltrank!';
+  if(f.includes('hunger'))return '🦆 Hunger? 🍖 Vielleicht hilft eine kleine Mahlzeit!';
+  if(f.includes('vergiftet'))return '🦆 Vergiftet! 🤢 Milch trinken!';
+  if(f.includes('brenne')||f.includes('brennen'))return '🦆 Du brennst! 🔥 Schnell ins Wasser! 💧';
+  if(f.includes('tränk')||f.includes('trank'))return '🦆 Tränke! 🧪 Wasser + Netherwarze + Melone!';
+  if(f.includes('taxi'))return '🦆 Deine Taxi-Anfrage wurde an den Admin gesendet!';
+  if(f.includes('haus')&&f.includes('bau'))return '🦆 Ja! Haus! 🏠 Klein 50, mittel 120, groß 300 Coins!';
+  if(f.includes('burg'))return '🦆 Burg! 🏰 200 Coins!';
+  if(f.includes('mcdonald')||f.includes('burger'))return '🦆 McDonald\'s! 🍔 Du hast '+myCoins+' Coins!';
+  if(f.includes('coins'))return '🦆 Du hast '+myCoins+' Coins, '+currentUser.name+'! 🪙';
+  if(f.includes('danke'))return '🦆 Gern geschehen, '+currentUser.name+'! Quak! ❤️';
+  if(f.includes('hallo')||f.includes('hi'))return '🦆 Hallo '+currentUser.name+'! Quak! Brauchst du Boss-, Create-, Heil- oder Taxi-Hilfe?';
+  return '🦆 Quak? Deine Nachricht wurde an den Admin gesendet. Oder ich helfe bei BOSSE, CREATE, HEILEN, TAXI, Haus und McDonald\'s!';
+}
+async function ask(text){if(!currentUser){alert('Bitte erst anmelden!');showAccount();return;}try{await sendToAdmin(text);addMsgToChat(duckAnswer(text),'duck');}catch(e){addMsgToChat('🦆 Nachricht konnte nicht gesendet werden: '+e.message,'duck');}}
+function sendMsg(){const input=document.getElementById('input');const text=input.value.trim();if(!text)return;input.value='';ask(text);}
+document.getElementById('input').addEventListener('keydown',e=>{if(e.key==='Enter')sendMsg();});
+document.getElementById('adminCode').addEventListener('keydown',e=>{if(e.key==='Enter')loginAdmin();});
+document.getElementById('adminReplyInput').addEventListener('keydown',e=>{if(e.key==='Enter')adminReply();});
+updateCart();
+restoreSession();
+</script>
+</body>
+</html>
